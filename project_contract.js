@@ -1,20 +1,11 @@
+const { promises } = require('dns')
 const Web3 = require('web3')
-var BigNumber = require('big-number');
-var Tx = require('ethereumjs-tx').Transaction
-var fs = require("fs")
-var array = fs.readFileSync('accounts.txt', 'utf8').split('\n');
-var numberOfAddresses = 10;
 
-const web3 = new Web3('https://ropsten.infura.io/v3/6ccf306ce52749babfb9f605cfffe53f')
+const rpcURL = "https://ropsten.infura.io/v3/6ccf306ce52749babfb9f605cfffe53f";
 
+const web3 = new Web3(rpcURL)
 
-const account1 = '0xaeFDe1075F61d2792EeE847eb420B85B5D69d7C8' 
-const privateKey1 = Buffer.from('a571f375f1dc6842f9f3eee8e9c84d626e69bbf70293208dc6174e5ed7f4c060', 'hex')
-
-
-const contractAddress = '0x757A403f37179187d8a5935e37889C2b43F6081f'
-
-const contractABI = [
+const abi = [
 	{
 		"inputs": [
 			{
@@ -308,70 +299,54 @@ const contractABI = [
 	}
 ]
 
-const contract = new web3.eth.Contract(contractABI, contractAddress)
 
+const address = "0x757A403f37179187d8a5935e37889C2b43F6081f"
+const owner = "0xaeFDe1075F61d2792EeE847eb420B85B5D69d7C"
 
-const getTransactionCount = async(account) => {
-  return await web3.eth.getTransactionCount(account)
+const contract = new web3.eth.Contract(abi, address)
+
+const getTotalSupply = async() => {
+  let totSupply =  await contract.methods.totalSupply().call()
+  return "totsup: " + totSupply
 }
 
-const sendTransaction = async(raw) => {
-  return await web3.eth.sendSignedTransaction(raw)
+const getName = async() => {
+  let name = await contract.methods.name().call()
+  return "name: " + name
 }
 
-const transferFunds = async(account1, account2, amount) => {
-
-  let trans_count = await getTransactionCount(account1)
-
-  console.log("Transcation Count returned: " + trans_count)
-
-  const txObject = {
-    nonce:    web3.utils.toHex(trans_count),
-    gasLimit: web3.utils.toHex(100000), 
-    gasPrice: web3.utils.toHex(web3.utils.toWei('30', 'gwei')),
-    to: contractAddress,
-    data: contract.methods.transfer(account2, amount).encodeABI()
-  }
-
-  const tx = new Tx(txObject, {chain:'ropsten', hardfork: 'petersburg'})
-
-  tx.sign(privateKey1)
-
-  const serializedTx = tx.serialize()
-  const raw = '0x' + serializedTx.toString('hex')
-
-  console.log("raw hex transaction: " + raw)
-
-  console.log("about to send transaction")
-
-  let minedTransaction = await sendTransaction(raw)
-  console.log("transaction hash returned: " + minedTransaction.transactionHash)
-
-  return `txHash is: ${minedTransaction.transactionHash}`
+const getSymbol = async() => {
+  let symbol = await contract.methods.symbol().call()
+  return "symbol: " + symbol
 }
 
-// async methods
-const getBalanceOf = async(account) => {
-  let balanceOf = await contract.methods.balanceOf(account).call()
-  return `balance of account ${account} is ${balanceOf}`
+const getBalanceOf = async(owner) => {
+  let balanceOf = await contract.methods.balanceOf(owner).call()
+  return "balanceOf: " + balanceOf
 }
 
-
-const go = async() => {
-  var rb = await contract.methods.balanceOf(account1).call()
-  var bal = new BigNumber(rb)  
-  console.log("Balance : ",rb)
-   var distribution = bal.div(20).div(numberOfAddresses)
-   console.log("Distributed value : " + (distribution.toString()))
-   for (let a= 0; a < array.length; a++) {
-     await transferFunds(account1,array[a],distribution)
-     console.log("Tokens received at : " + array[a]);
-  }
+const getDecimals =  async() => {
+  let decimals = await contract.methods.decimals().call()
+  return "decimals: " + decimals
 }
 
+const returnValues = async() => {
 
-module.exports = { transferFunds, getBalanceOf, go }
-  
-go()
+  console.log(await getTotalSupply())
+  console.log(await getName())
+  console.log(await getDecimals())
+  console.log(await getSymbol())
+  console.log(await getBalanceOf(owner))
+
+}
+
+const totalSupply = async() => {
+  let retval = await getTotalSupply()
+  console.log('retval is: ' + retval)
+  return retval
+}
+
+module.exports = { returnValues, totalSupply }
+//returnValues()
 
 

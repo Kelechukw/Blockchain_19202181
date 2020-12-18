@@ -11,11 +11,7 @@ app.get('/totalsupply', async (req,res) => {
 })
 
 app.post('/transfer', async (req, res) => {
-  var account_from = req.body.account_from;
-  var account_to = req.body.account_to;
-  var amount = req.body.amount;
-
-  res.send(await method.transferFunds(account_from, account_to, amount));
+ res.send(await method.go())
 })
 
 app.get('/balance/:id', async (req, res) => {
